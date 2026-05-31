@@ -9,14 +9,19 @@ from PIL import Image
 class HAM10000Dataset(Dataset):
     """Custom Dataset for HAM10000 skin lesion images."""
 
-    def __init__(self, metadata_csv, img_dir, transform=None):
-        self.img_dir = img_dir
-        self.df = pd.read_csv(metadata_csv)
+    def __init__(self, metadata_csv, img_dir, transform=None, binary=False):
+        self.img_dir   = img_dir
+        self.df        = pd.read_csv(metadata_csv)
         self.transform = transform
 
-        # Encode labels eg. 'nv', 'mel', etc. to integers
-        self.label_encoder = LabelEncoder()
-        raw_labels = self.label_encoder.fit_transform(self.df["dx"])
+        # Encode labels
+        if binary:
+            raw_labels = (self.df["dx"] == "mel").astype(int).values
+            self.label_encoder = None
+        else:
+            self.label_encoder = LabelEncoder()
+            raw_labels = self.label_encoder.fit_transform(self.df["dx"])
+
         self.labels = torch.tensor(raw_labels, dtype=torch.long)
 
         # Preprocess features: age (numerical)[single number from 0 to 1], sex and localization (categorical)[0/1 vectors]
